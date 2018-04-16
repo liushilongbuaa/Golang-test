@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/sha1"
 	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"time"
@@ -12,19 +13,23 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type A struct {
-	Name []string `json:"name,omitempty"`
-	Age  []int    `json:"age,omitempty"`
-}
-
 func main() {
-	logic_test()
+
+	json_test()
 }
 
 func json_test() {
-	a := []int{0, 0, 1, 2, 4, 12, 24, 1}
-
-	fmt.Println(a[0:5])
+	type A struct {
+		Name []string `json:"name,omitempty"`
+		Age  []*int   `json:"age"`
+		City *[]int   `json:"city"`
+	}
+	a := A{}
+	bt, err := json.Marshal(a)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(bt))
 }
 func mysql_test() {
 	strConn := "%s:%s@tcp(%s:%d)/%s?autocommit=true&parseTime=true&timeout=%dms&loc=Asia%%2FShanghai&tx_isolation='READ-COMMITTED'"
