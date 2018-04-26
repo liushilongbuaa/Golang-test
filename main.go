@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/bluele/gcache"
@@ -15,21 +16,51 @@ import (
 
 func main() {
 
-	json_test()
+	var a int
+	fmt.Println(a)
 }
-
+func regexp_test() {
+	var uuidP string = `^[a-z0-9]([a-z0-9-])*$`
+	uuidRe := regexp.MustCompile(uuidP)
+	tem := ""
+	fmt.Println(uuidRe.Match([]byte(tem)))
+}
 func json_test() {
-	type A struct {
-		Name []string `json:"name,omitempty"`
-		Age  []*int   `json:"age"`
-		City *[]int   `json:"city"`
+	/*	type A struct {
+			Name  []string `json:"name,omitempty"`
+			AgeId []*int   `json:"age_id"`
+			City  *[]int   `json:"city"`
+		}
+		type Network struct {
+			SubnetId       string   `json:"subnet_id,omitempty"`
+			FixedIp        *string  `json:"fixed_ip,omitempty"`
+			SecurityGroups []string `json:"security_groups,omitempty"`
+		}
+		a := Network{}
+		bt, err := json.Marshal(a)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fmt.Println(string(bt))
+	*/
+	type B struct {
+		AA *[]string `json:"aa,omitempty"`
+		BB *[]string `json:"bb,omitempty"`
+		CC *[]string `json:"cc,omitempty"`
 	}
-	a := A{}
-	bt, err := json.Marshal(a)
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println(string(bt))
+	var a, b, c []string
+	a = []string{""}
+	b = []string{""}
+	aa := B{AA: &a, BB: &b, CC: &c}
+	var bb B
+
+	bt, _ := json.Marshal(aa)
+	fmt.Println("json message: ", string(bt))
+
+	err := json.Unmarshal(bt, &bb)
+	fmt.Println(err)
+	fmt.Println("unmarshal result: ", len(*bb.AA), bb.BB, bb.CC)
+	//fmt.Println(string(bt), len(bb.AA), len(bb.BB), len(bb.CC))
 }
 func mysql_test() {
 	strConn := "%s:%s@tcp(%s:%d)/%s?autocommit=true&parseTime=true&timeout=%dms&loc=Asia%%2FShanghai&tx_isolation='READ-COMMITTED'"
