@@ -1,12 +1,14 @@
 package main
 
 import (
+	"Golang-test/subdir"
 	"crypto/sha1"
 	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"regexp"
+	"runtime"
 	"time"
 
 	"github.com/bluele/gcache"
@@ -15,9 +17,12 @@ import (
 )
 
 func main() {
-
-	var a int
-	fmt.Println(a)
+	json_test()
+}
+func rutime_test() {
+	pc, file, line, ok := runtime.Caller(0)
+	fmt.Println(pc, file, line, ok)
+	subdir.TestSub()
 }
 func regexp_test() {
 	var uuidP string = `^[a-z0-9]([a-z0-9-])*$`
@@ -26,41 +31,28 @@ func regexp_test() {
 	fmt.Println(uuidRe.Match([]byte(tem)))
 }
 func json_test() {
-	/*	type A struct {
-			Name  []string `json:"name,omitempty"`
-			AgeId []*int   `json:"age_id"`
-			City  *[]int   `json:"city"`
-		}
-		type Network struct {
-			SubnetId       string   `json:"subnet_id,omitempty"`
-			FixedIp        *string  `json:"fixed_ip,omitempty"`
-			SecurityGroups []string `json:"security_groups,omitempty"`
-		}
-		a := Network{}
-		bt, err := json.Marshal(a)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fmt.Println(string(bt))
-	*/
 	type B struct {
-		AA *[]string `json:"aa,omitempty"`
-		BB *[]string `json:"bb,omitempty"`
-		CC *[]string `json:"cc,omitempty"`
+		Family string
+		Name   string
 	}
-	var a, b, c []string
-	a = []string{""}
-	b = []string{""}
-	aa := B{AA: &a, BB: &b, CC: &c}
-	var bb B
-
-	bt, _ := json.Marshal(aa)
-	fmt.Println("json message: ", string(bt))
-
-	err := json.Unmarshal(bt, &bb)
-	fmt.Println(err)
-	fmt.Println("unmarshal result: ", len(*bb.AA), bb.BB, bb.CC)
-	//fmt.Println(string(bt), len(bb.AA), len(bb.BB), len(bb.CC))
+	type A struct {
+		Name B
+		age  *int
+	}
+	name := B{"liu", "shilong"}
+	AGE := 22
+	a := A{Name: name, age: &AGE}
+	bt, err := json.Marshal(&a)
+	if err != nil {
+		fmt.Println("err: ", err)
+	}
+	fmt.Println(string(bt))
+	var b A
+	err = json.Unmarshal(bt, &b)
+	if err != nil {
+		fmt.Println("err: ", err)
+	}
+	fmt.Printf("%v", b.age)
 }
 func mysql_test() {
 	strConn := "%s:%s@tcp(%s:%d)/%s?autocommit=true&parseTime=true&timeout=%dms&loc=Asia%%2FShanghai&tx_isolation='READ-COMMITTED'"
