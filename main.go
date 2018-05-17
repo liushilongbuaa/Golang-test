@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"regexp"
 	"runtime"
 	"time"
@@ -17,7 +18,28 @@ import (
 )
 
 func main() {
-	json_test()
+	unicode_test()
+}
+func unicode_test() {
+	bt, err := ioutil.ReadFile("test")
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("utf-8:")
+	for _, v := range bt {
+		fmt.Printf("%x ", v)
+	}
+}
+func rune_test() {
+	str := "hello, 刘世龙"
+	for k, v := range str {
+		fmt.Printf("%x %d\n", v, k)
+	}
+	fmt.Println("\n", len(str))
+	for k, v := range []rune(str) {
+		fmt.Printf("%x %d\n", v, k)
+	}
+	fmt.Println(len([]rune(str)))
 }
 func rutime_test() {
 	pc, file, line, ok := runtime.Caller(0)
