@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"runtime"
 	"time"
+	"unicode/utf8"
 
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
@@ -18,7 +19,13 @@ import (
 )
 
 func main() {
-	unicode_test()
+	mysql_test()
+}
+func fullrune_test() {
+	buf := []byte{228, 184, 180}
+	fmt.Println(string(buf))
+	fmt.Printf("%b  %b  %b\n", buf[0], buf[1], buf[2])
+	fmt.Println(utf8.FullRune(buf))
 }
 func unicode_test() {
 	bt, err := ioutil.ReadFile("test")
@@ -27,6 +34,9 @@ func unicode_test() {
 	}
 	fmt.Println("utf-8:")
 	for _, v := range bt {
+		if v == 0x0d || v == 0x0a {
+			break
+		}
 		fmt.Printf("%x ", v)
 	}
 }
@@ -47,10 +57,12 @@ func rutime_test() {
 	subdir.TestSub()
 }
 func regexp_test() {
-	var uuidP string = `^[a-z0-9]([a-z0-9-])*$`
-	uuidRe := regexp.MustCompile(uuidP)
-	tem := ""
+	uuidRe := regexp.MustCompile(`^([a-zA-Z0-9-_.]|[\p{Han}])*$`)
+	tem := `路上高比例abc-._`
 	fmt.Println(uuidRe.Match([]byte(tem)))
+
+	macRe := regexp.MustCompile(`^([0-9A-F]{2}\:){5}[0-9A-F]{2}$`)
+	fmt.Println(macRe.MatchString("FA:12:A2:21:22:11"))
 }
 func json_test() {
 	type B struct {
@@ -87,20 +99,17 @@ func mysql_test() {
 		return
 	}
 
-	result, err := db.Query("select id,name from vpc where id=? limit 10", "")
+	raw := db.QueryRow("select id,version from vpc where id=?", "vpc-02cs 8mand1")
 	if err != nil {
 		fmt.Printf("db.query err: %s\n", err.Error())
 	}
-	defer result.Close()
-	var id, name string
 
-	for result.Next() {
-		err = result.Scan(&id, &name)
-		if err != nil {
-			fmt.Printf("vpc.Scan err: %s\n", err.Error())
-		}
+	var id, version string
+	err = raw.Scan(&id, &version)
+	if err != nil {
+		fmt.Printf("raw.Scan err: %s\n", err.Error())
 	}
-	fmt.Printf("id: %s, name: %s", id, name)
+	fmt.Printf("id: %s, version: %s", id, version)
 }
 func flag_test() {
 	systemTest := flag.Bool("system-test", false, "Set to true when running system tests")
