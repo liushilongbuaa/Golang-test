@@ -2,12 +2,16 @@ package main
 
 import (
 	"Golang-test/subdir"
+	"bytes"
+	"context"
 	"crypto/sha1"
 	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
+	"os"
 	"regexp"
 	"runtime"
 	"time"
@@ -16,10 +20,34 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
+	//"jd.com/lb/jstack-lb-server/api/utils"
 )
 
 func main() {
-	mysql_test()
+
+	os.Stdin.Write([]byte("haha hello"))
+
+}
+func iota_test() {
+	const (
+		A = -1
+		B = iota
+		C
+		D
+		E
+	)
+	fmt.Println(A, B, C, D, E)
+}
+func int_test() {
+	var INT_MAX = int(^uint(0) >> 1)
+	var INT_MIN = ^INT_MAX
+	fmt.Printf("%x\t%d\n", INT_MAX, INT_MAX)
+	fmt.Printf("%x\t%d\n", INT_MIN, INT_MIN)
+
+	var INT32_MAX = int32(^uint32(0) >> 1)
+	var INT32_MIN = ^INT_MAX
+	fmt.Printf("%x\t%d\n", INT32_MAX, INT32_MAX)
+	fmt.Printf("%x\t%d\n", INT32_MIN, INT32_MIN)
 }
 func fullrune_test() {
 	buf := []byte{228, 184, 180}
@@ -89,8 +117,9 @@ func json_test() {
 	fmt.Printf("%v", b.age)
 }
 func mysql_test() {
+	// connection
 	strConn := "%s:%s@tcp(%s:%d)/%s?autocommit=true&parseTime=true&timeout=%dms&loc=Asia%%2FShanghai&tx_isolation='READ-COMMITTED'"
-	url := fmt.Sprintf(strConn, "root", "admin", "192.168.178.128", 3306, "cc", 3000)
+	url := fmt.Sprintf(strConn, "root", "admin", "192.168.244.34", 3306, "cc", 3000)
 	var db *sql.DB
 	var err error
 	db, err = sql.Open("mysql", url)
@@ -98,18 +127,44 @@ func mysql_test() {
 		fmt.Printf("mysql open err: %s\n", err.Error())
 		return
 	}
-
-	raw := db.QueryRow("select id,version from vpc where id=?", "vpc-02cs 8mand1")
+	var id, version string
+	var ctx context.Context = context.WithValue(context.Background(), "trace_id", "xxxxxxxx")
+	// Query 查不到不会报错，raws.next()=false
+	raws, err := db.QueryContext(ctx, "select id,version from port where id=?", "port-a3etstcxv0")
 	if err != nil {
 		fmt.Printf("db.query err: %s\n", err.Error())
 	}
 
-	var id, version string
-	err = raw.Scan(&id, &version)
-	if err != nil {
-		fmt.Printf("raw.Scan err: %s\n", err.Error())
+	for raws.Next() {
+		err = raws.Scan(&id, &version)
+		if err != nil {
+			fmt.Printf("raw.Scan err: %s\n", err.Error())
+		}
 	}
-	fmt.Printf("id: %s, version: %s", id, version)
+
+	fmt.Printf("#################id: %s, version: %s#################", id, version)
+	//	// Query 查不到不会报错，raws.next()=false
+	//	raws, err := db.QueryContext("select id,version from port where id=?", "port-a3etstcxv01")
+	//	if err != nil {
+	//		fmt.Printf("db.query err: %s\n", err.Error())
+	//	}
+
+	//	for raws.Next() {
+	//		err = raws.Scan(&id, &version)
+	//		if err != nil {
+	//			fmt.Printf("raw.Scan err: %s\n", err.Error())
+	//		}
+	//	}
+
+	//	fmt.Printf("id: %s, version: %s", id, version)
+
+	//	//update
+	//	str := "update port set version=version+1 where id=?"
+	//	values := []interface{}{"port-a3etstcxv0"}
+	//	result, err := db.Exec(str, values...)
+	//	fmt.Println(err)
+	//	n, err := result.RowsAffected()
+	//	fmt.Println(err, n)
 }
 func flag_test() {
 	systemTest := flag.Bool("system-test", false, "Set to true when running system tests")
@@ -473,4 +528,11 @@ A:
 		}
 	}
 	fmt.Println()
+}
+func http_test() {
+	input := []byte{}
+	req, err := http.NewRequest("POST", "http://127.0.0.1:80/cc-server", bytes.NewReader(input))
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "CcClient")
+	fmt.Println(req, err)
 }
