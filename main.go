@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
+	//	"os"
 	"regexp"
 	"runtime"
 	"time"
@@ -24,8 +24,6 @@ import (
 )
 
 func main() {
-
-	os.Stdin.Write([]byte("haha hello"))
 
 }
 func iota_test() {
@@ -69,7 +67,17 @@ func unicode_test() {
 	}
 }
 func rune_test() {
-	str := "hello, 刘世龙"
+	descRe := regexp.MustCompile(`^(.){0,256}$`)
+	str := "123456789012345aaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffffaaaaabbbbbcccccdddddeeeeefffff"
+	b := descRe.MatchString(str)
+	fmt.Println(b)
+	fmt.Println(utf8.FullRune([]byte{0xe1, 0x99}))
+	bts := []byte(str)
+	bts = append(bts, []byte{0xe1}...)
+	b = descRe.Match(bts)
+	fmt.Println(b)
+
+	str = "hello, 刘世龙"
 	for k, v := range str {
 		fmt.Printf("%x %d\n", v, k)
 	}
@@ -94,27 +102,15 @@ func regexp_test() {
 }
 func json_test() {
 	type B struct {
-		Family string
+		Family []string
 		Name   string
 	}
-	type A struct {
-		Name B
-		age  *int
-	}
-	name := B{"liu", "shilong"}
-	AGE := 22
-	a := A{Name: name, age: &AGE}
-	bt, err := json.Marshal(&a)
+	a := B{Name: "lsl"}
+	bt, err := json.Marshal(a)
 	if err != nil {
-		fmt.Println("err: ", err)
+		fmt.Println(err)
 	}
-	fmt.Println(string(bt))
-	var b A
-	err = json.Unmarshal(bt, &b)
-	if err != nil {
-		fmt.Println("err: ", err)
-	}
-	fmt.Printf("%v", b.age)
+	fmt.Println(string(bt), a.Family == nil)
 }
 func mysql_test() {
 	// connection
@@ -222,9 +218,12 @@ func gcache_test() {
 	cache := gcache.New(1024).LRU().Build()
 	re, err := cache.Get("CCBGW_API_LSL")
 	fmt.Println(re, err)
-	cache.SetWithExpire("CCBGW_API_LSL", "haha", time.Minute)
-	re, err = cache.Get("CCBGW_API_LSL")
-	fmt.Println(re, err)
+	cache.SetWithExpire("CCBGW_API_LSL", "haha", time.Duration(1)*time.Second)
+	for i := 0; i < 10; i++ {
+		re, err = cache.Get("CCBGW_API_LSL")
+		fmt.Println(re, err)
+		time.Sleep(time.Millisecond * time.Duration(300))
+	}
 }
 func logic_test() {
 	count := func(b int, c [10]int) int {
