@@ -11,20 +11,131 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	//	"os"
 	"regexp"
 	"runtime"
+	"sync"
+	//	"strconv"
+	"strings"
 	"time"
 	"unicode/utf8"
 
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/spf13/cobra"
 	//"jd.com/lb/jstack-lb-server/api/utils"
 )
 
-func main() {
+var INT_MAX = int(^uint(0) >> 1)
+var INT_MIN = ^INT_MAX
 
+func main() {
+	var echoTimes int
+
+	var cmdPrint = &cobra.Command{
+		Use:   "print [string to print]",
+		Short: "Print anything to the screen",
+		Long: `print is for printing anything back to the screen.
+            For many years people have printed back to the screen.
+            `,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Print: " + strings.Join(args, " "))
+		},
+	}
+
+	var cmdEcho = &cobra.Command{
+		Use:   "echo [string to echo]",
+		Short: "Echo anything to the screen",
+		Long: `echo is for echoing anything back.
+            Echo works a lot like print, except it has a child command.
+            `,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("Print: " + strings.Join(args, " "))
+		},
+	}
+
+	var cmdTimes = &cobra.Command{
+		Use:   "times [# times] [string to echo]",
+		Short: "Echo anything to the screen more times",
+		Long: `echo things multiple times back to the user by providing
+            a count and a string.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			fmt.Println("cmdTimes 2: ", echoTimes)
+			for i := 0; i < echoTimes; i++ {
+				fmt.Println("Echo: " + strings.Join(args, " "))
+			}
+		},
+	}
+
+	cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
+	fmt.Println("cmdTimes 1: ", echoTimes)
+	var rootCmd = &cobra.Command{Use: "app"}
+	rootCmd.AddCommand(cmdPrint, cmdEcho)
+	cmdEcho.AddCommand(cmdTimes)
+
+	rootCmd.Execute()
+	fmt.Println("cmdTimes 3: ", echoTimes)
+}
+func convolve(u, v []int) []int {
+	n := len(u) + len(v) - 1
+	ret := make([]int, n)
+	for k := 0; k < n; k++ {
+		ret[k] = mul(u, v, k)
+	}
+	return ret
+}
+func convolve2(u, v []int) (w []int) {
+	n := len(u) + len(v) - 1
+	w = make([]int, n)
+
+	// 将 w 切分成花费 ~100μs-1ms 用于计算的工作单元
+	size := 1 << 22 / n
+
+	wg := new(sync.WaitGroup)
+	wg.Add(1 + (n-1)/size)
+	for i := 0; i < n && i >= 0; i += size { // 整型溢出后 i < 0
+		j := i + size
+		if j > n || j < 0 { // 整型溢出后 j < 0
+			j = n
+		}
+
+		// 这些goroutine共享内存，但是只读
+		go func(i, j int) {
+			for k := i; k < j; k++ {
+				w[k] = mul(u, v, k)
+			}
+			wg.Done()
+		}(i, j)
+	}
+	wg.Wait()
+	return
+}
+func mul(u, v []int, k int) (res int) {
+	a := k
+	tem := 0
+	if k > len(u)-1 {
+		a = len(u) - 1
+	}
+	if k > len(v)-1 {
+		tem = k - len(v) + 1
+	}
+	for i := tem; i < a; i++ {
+		res += u[i] + v[k-i]
+	}
+	return
+}
+func MultiProcess_test() {
+	var u, v []int
+	for i := 0; i < 50000; i++ {
+		u = append(u, []int{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}...)
+		v = append(v, []int{1, 1, 1, 1, 1}...)
+	}
+	/*start := time.Now()
+	a := Convolve(u, v)
+	fmt.Println(time.Since(start), ":     ", a)*/
+	start := time.Now()
+	a := convolve2(u, v)
+	fmt.Println(time.Since(start), ":     ", a)
 }
 func iota_test() {
 	const (
@@ -37,8 +148,9 @@ func iota_test() {
 	fmt.Println(A, B, C, D, E)
 }
 func int_test() {
-	var INT_MAX = int(^uint(0) >> 1)
-	var INT_MIN = ^INT_MAX
+	fmt.Println(uint(INT_MAX) + 2)
+	fmt.Println(int(uint(INT_MAX) + 2))
+
 	fmt.Printf("%x\t%d\n", INT_MAX, INT_MAX)
 	fmt.Printf("%x\t%d\n", INT_MIN, INT_MIN)
 
@@ -125,17 +237,17 @@ func mysql_test() {
 	}
 	var id, version string
 	var ctx context.Context = context.WithValue(context.Background(), "trace_id", "xxxxxxxx")
+	_ = ctx
 	// Query 查不到不会报错，raws.next()=false
-	raws, err := db.QueryContext(ctx, "select id,version from port where id=?", "port-a3etstcxv0")
+	raws := db.QueryRow("select id,version from port where id=?", "")
 	if err != nil {
 		fmt.Printf("db.query err: %s\n", err.Error())
 	}
 
-	for raws.Next() {
-		err = raws.Scan(&id, &version)
-		if err != nil {
-			fmt.Printf("raw.Scan err: %s\n", err.Error())
-		}
+	err = raws.Scan(&id, &version)
+	if err != nil {
+		fmt.Printf("raw.Scan err: %s\n", err.Error())
+		fmt.Println(err == sql.ErrNoRows)
 	}
 
 	fmt.Printf("#################id: %s, version: %s#################", id, version)
@@ -534,4 +646,16 @@ func http_test() {
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "CcClient")
 	fmt.Println(req, err)
+}
+func http_server_test() {
+	a := &handler{}
+	for {
+		http.ListenAndServe(":80", a)
+	}
+}
+
+type handler struct{}
+
+func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("hello world!!!\n"))
 }
