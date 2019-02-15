@@ -4,77 +4,106 @@ import (
 	"Golang-test/subdir"
 	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
 	"crypto/sha1"
 	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math/big"
+	"net"
 	"net/http"
 	"regexp"
 	"runtime"
 	"sync"
-	//	"strconv"
-	"strings"
 	"time"
 	"unicode/utf8"
+	"unsafe"
 
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/spf13/cobra"
-	//"jd.com/lb/jstack-lb-server/api/utils"
 )
+
+type T struct {
+	A int
+	B string
+}
 
 var INT_MAX = int(^uint(0) >> 1)
 var INT_MIN = ^INT_MAX
 
+type ListNode struct {
+	Val  int
+	Next *ListNode
+}
+
 func main() {
-	var echoTimes int
 
-	var cmdPrint = &cobra.Command{
-		Use:   "print [string to print]",
-		Short: "Print anything to the screen",
-		Long: `print is for printing anything back to the screen.
-            For many years people have printed back to the screen.
-            `,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Print: " + strings.Join(args, " "))
-		},
+}
+
+func rsa_test() *rsa.PrivateKey {
+	time1 := time.Now()
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	fmt.Println(time.Since(time1).Nanoseconds())
+	time2 := time.Now()
+	if err != nil {
+		fmt.Println("generateKey error :", err)
 	}
+	fmt.Println(time.Since(time2).Nanoseconds())
+	time3 := time.Now()
+	fmt.Println("D ", *privateKey.D)
+	fmt.Println(time.Since(time3).Nanoseconds())
+	fmt.Println("E ", privateKey.E)
+	fmt.Println("N ", *privateKey.N)
+	fmt.Println("pub ", privateKey.PublicKey)
+	return privateKey
+}
 
-	var cmdEcho = &cobra.Command{
-		Use:   "echo [string to echo]",
-		Short: "Echo anything to the screen",
-		Long: `echo is for echoing anything back.
-            Echo works a lot like print, except it has a child command.
-            `,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("Print: " + strings.Join(args, " "))
-		},
+func bit_test() {
+	a := big.NewInt(123456789012341234)
+	b := big.NewInt(123456789012341234)
+	var c big.Int
+	c.Mul(a, b)
+	fmt.Println(a.BitLen(), b.BitLen(), c.BitLen())
+	fmt.Println(c.String())
+	fmt.Println(c.Bytes())
+}
+func unsafe_test() {
+	t := T{
+		A: 10,
+		B: "abc",
 	}
-
-	var cmdTimes = &cobra.Command{
-		Use:   "times [# times] [string to echo]",
-		Short: "Echo anything to the screen more times",
-		Long: `echo things multiple times back to the user by providing
-            a count and a string.`,
-		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Println("cmdTimes 2: ", echoTimes)
-			for i := 0; i < echoTimes; i++ {
-				fmt.Println("Echo: " + strings.Join(args, " "))
-			}
-		},
+	l := unsafe.Sizeof(t)
+	pb := (*[1024]byte)(unsafe.Pointer(&t))
+	fmt.Println("Struct:", t)
+	fmt.Println("Bytes:", (*pb)[:l])
+}
+func slice_test() {
+	b := []byte{192, 168, 1, 1, 0, 0, 0, 111, 192, 168, 0, 0, 0, 0, 111}
+	a := b[:3]
+	c := b[1:4]
+	fmt.Println(b, a, c)
+	a[0] = 111
+	fmt.Println(b, a, c)
+}
+func structTransfer(b []byte) net.IP {
+	return b
+}
+func ip_test() {
+	ipv6cidr := "2001:2:1:110e:0:0:123:ffab/56"
+	//ipv6cidr := "192.168.222.1/17"
+	ipaddr, network, err := net.ParseCIDR(ipv6cidr)
+	fmt.Println(ipaddr, network, err)
+	_, size := network.Mask.Size()
+	for i := 0; i < size/8; i++ {
+		fmt.Printf(" %x", ^network.Mask[i])
 	}
-
-	cmdTimes.Flags().IntVarP(&echoTimes, "times", "t", 1, "times to echo the input")
-	fmt.Println("cmdTimes 1: ", echoTimes)
-	var rootCmd = &cobra.Command{Use: "app"}
-	rootCmd.AddCommand(cmdPrint, cmdEcho)
-	cmdEcho.AddCommand(cmdTimes)
-
-	rootCmd.Execute()
-	fmt.Println("cmdTimes 3: ", echoTimes)
+	fmt.Println("\n", network.Mask.String())
+	fmt.Println("############################")
+	fmt.Println(network.Mask.Size())
 }
 func convolve(u, v []int) []int {
 	n := len(u) + len(v) - 1
@@ -213,21 +242,22 @@ func regexp_test() {
 	fmt.Println(macRe.MatchString("FA:12:A2:21:22:11"))
 }
 func json_test() {
-	type B struct {
-		Family []string
-		Name   string
+	jsonrow := `
+	{
+		"p1":""
 	}
-	a := B{Name: "lsl"}
-	bt, err := json.Marshal(a)
+	`
+	a := C{}
+	err := json.Unmarshal([]byte(jsonrow), &a)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println(string(bt), a.Family == nil)
+	fmt.Println(a.P1, a.P2)
 }
 func mysql_test() {
 	// connection
 	strConn := "%s:%s@tcp(%s:%d)/%s?autocommit=true&parseTime=true&timeout=%dms&loc=Asia%%2FShanghai&tx_isolation='READ-COMMITTED'"
-	url := fmt.Sprintf(strConn, "root", "admin", "192.168.244.34", 3306, "cc", 3000)
+	url := fmt.Sprintf(strConn, "root", "123", "192.168.217.131", 3306, "cc", 3000)
 	var db *sql.DB
 	var err error
 	db, err = sql.Open("mysql", url)
@@ -235,44 +265,24 @@ func mysql_test() {
 		fmt.Printf("mysql open err: %s\n", err.Error())
 		return
 	}
-	var id, version string
+	var id, version, policy string
 	var ctx context.Context = context.WithValue(context.Background(), "trace_id", "xxxxxxxx")
 	_ = ctx
 	// Query 查不到不会报错，raws.next()=false
-	raws := db.QueryRow("select id,version from port where id=?", "")
+	raws, err := db.Query("select id,version,name from port where id=?", "port-018f4j0cks")
 	if err != nil {
-		fmt.Printf("db.query err: %s\n", err.Error())
+		fmt.Println("263", err)
+		return
 	}
 
-	err = raws.Scan(&id, &version)
-	if err != nil {
-		fmt.Printf("raw.Scan err: %s\n", err.Error())
-		fmt.Println(err == sql.ErrNoRows)
+	for raws.Next() {
+		err = raws.Scan(&id, &version, &policy)
+		if err != nil {
+			fmt.Printf("raw.Scan err: %s\n", err.Error())
+			fmt.Println(err == sql.ErrNoRows)
+		}
+		fmt.Println(id, version, policy)
 	}
-
-	fmt.Printf("#################id: %s, version: %s#################", id, version)
-	//	// Query 查不到不会报错，raws.next()=false
-	//	raws, err := db.QueryContext("select id,version from port where id=?", "port-a3etstcxv01")
-	//	if err != nil {
-	//		fmt.Printf("db.query err: %s\n", err.Error())
-	//	}
-
-	//	for raws.Next() {
-	//		err = raws.Scan(&id, &version)
-	//		if err != nil {
-	//			fmt.Printf("raw.Scan err: %s\n", err.Error())
-	//		}
-	//	}
-
-	//	fmt.Printf("id: %s, version: %s", id, version)
-
-	//	//update
-	//	str := "update port set version=version+1 where id=?"
-	//	values := []interface{}{"port-a3etstcxv0"}
-	//	result, err := db.Exec(str, values...)
-	//	fmt.Println(err)
-	//	n, err := result.RowsAffected()
-	//	fmt.Println(err, n)
 }
 func flag_test() {
 	systemTest := flag.Bool("system-test", false, "Set to true when running system tests")
@@ -645,17 +655,26 @@ func http_test() {
 	req, err := http.NewRequest("POST", "http://127.0.0.1:80/cc-server", bytes.NewReader(input))
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "CcClient")
+
+	client := http.Client{}
+	client.Do(req)
 	fmt.Println(req, err)
 }
 func http_server_test() {
 	a := &handler{}
-	for {
-		http.ListenAndServe(":80", a)
-	}
+	http.ListenAndServe(":81", a)
+	fmt.Println("finished")
+}
+func deferreturn_test() (int, error) {
+	fmt.Println("1")
+	defer fmt.Println("2")
+	return fmt.Println("3")
 }
 
 type handler struct{}
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello world!!!\n"))
+	action := r.FormValue("Action")
+	fmt.Println("Action: ", action)
 }

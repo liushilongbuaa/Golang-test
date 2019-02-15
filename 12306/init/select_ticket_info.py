@@ -260,12 +260,12 @@ class select:
             if check_user['messages']:
                 print ('用户检查失败：%s，可能未登录，可能session已经失效' % check_user['messages'][0])
                 print ('正在尝试重新登录')
-                self.call_login()
+                go_login()
                 self.is_check_user["user_time"] = datetime.datetime.now()
             else:
                 print ('用户检查失败： %s，可能未登录，可能session已经失效' % check_user)
                 print ('正在尝试重新登录')
-                self.call_login()
+                go_login()
                 self.is_check_user["user_time"] = datetime.datetime.now()
 
     def submit_station(self):
@@ -610,26 +610,21 @@ class select:
     #     else:
     #         self.submitOrderRequest()
 
-    def call_login(self):
-        """登录回调方法"""
-        go_login()
-
     def main(self):
-        self.call_login()
+        go_login()
         from_station, to_station = self.station_table(self.from_station, self.to_station)
-        # if self.leftTicketLog(from_station, to_station):
         num = 1
         while 1:
             try:
                 num += 1
-                #if "user_time" in self.is_check_user and (datetime.datetime.now() - self.is_check_user["user_time"]).seconds/60 > 10:
-                    # 十分钟调用一次检查用户是否登录
-                    #self.check_user()
+                if "user_time" in self.is_check_user and (datetime.datetime.now() - self.is_check_user["user_time"]).seconds/60 > 10:
+                # 十分钟调用一次检查用户是否登录
+                    self.check_user()
                 time.sleep(self.select_refresh_interval)
-                #if time.strftime('%H:%M:%S', time.localtime(time.time())) > "23:00:00":
-                 #   print "12306休息时间，本程序自动停止,明天早上6点将自动运行"
-                 #   time.sleep(60 * 60 * 7)
-                 #   self.call_login()
+                # if time.strftime('%H:%M:%S', time.localtime(time.time())) > "23:00:00":
+                # print "12306休息时间，本程序自动停止,明天早上6点将自动运行"
+                # time.sleep(60 * 60 * 7)
+                # self.call_login()
                 start_time = datetime.datetime.now()
                 self.submitOrderRequestImplement(from_station, to_station)
                 print datetime.datetime.now(), "正在第{0}次查询  乘车日期: {1}  车次{2} 查询无票  代理设置 无  总耗时{3}ms".format(num, self.station_date, ",".join(self.station_trains), (datetime.datetime.now()-start_time).microseconds/1000)
