@@ -1,7 +1,6 @@
 package main
 
 import (
-	"Golang-test/subdir"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -23,6 +22,8 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
+	"./subdir"
+
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
@@ -36,17 +37,17 @@ type T struct {
 var INT_MAX = 1<<31 - 1
 var INT_MIN = -(1 << 31)
 
-// without .*
+// compress a-z with *
+// ex: aabbc -> a*b*c
 func parsefullStr(a string) string {
 	if strings.Index(a, ".*") != -1 {
 		panic("parsefullStr")
 	}
 	tem := []byte{}
 	for i := 0; i < len(a); {
-		if i == len(a)-1 || a[i] == byte('.') {
+		if i == len(a)-1 {
 			tem = append(tem, a[i])
-			i++
-			continue
+			break
 		}
 		count := 0
 		for j := i + 1; j < len(a); j++ {
@@ -58,22 +59,29 @@ func parsefullStr(a string) string {
 		}
 		if count > 0 {
 			tem = append(tem, a[i], byte('*'))
-			continue
+		} else {
+			tem = append(tem, a[i])
 		}
-		tem = append(tem, a[i])
 		i += count + 1
 	}
 	return string(tem)
 }
 
 func isMatch(s string, p string) bool {
-	if strings.Count(p, ".*") > 1 {
-		return false
+	parsedS := parsefullStr(s)
+	if parsedS == p {
+		return true
 	}
 	return false
 }
 func main() {
-	fmt.Println(parsefullStr("a...ccbb"))
+	fmt.Println(isMatch("awejafweifoaweifjawffasdf", "awejafweifoaweifjawf*asdf"))
+	fmt.Println(isMatch("aa", "aa*"))
+	/*	fmt.Println(isMatch("a"))
+		fmt.Println(isMatch("aab"))
+		fmt.Println(isMatch("abbaa"))
+		fmt.Println(isMatch("accffffv"))
+		fmt.Println(isMatch("aaaaaav"))*/
 }
 
 func rsa_test() *rsa.PrivateKey {
