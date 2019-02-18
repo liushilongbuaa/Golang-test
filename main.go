@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
+	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
@@ -32,16 +33,47 @@ type T struct {
 	B string
 }
 
-var INT_MAX = int(^uint(0) >> 1)
-var INT_MIN = ^INT_MAX
+var INT_MAX = 1<<31 - 1
+var INT_MIN = -(1 << 31)
 
-type ListNode struct {
-	Val  int
-	Next *ListNode
+// without .*
+func parsefullStr(a string) string {
+	if strings.Index(a, ".*") != -1 {
+		panic("parsefullStr")
+	}
+	tem := []byte{}
+	for i := 0; i < len(a); {
+		if i == len(a)-1 || a[i] == byte('.') {
+			tem = append(tem, a[i])
+			i++
+			continue
+		}
+		count := 0
+		for j := i + 1; j < len(a); j++ {
+			if a[j] == a[i] {
+				count++
+			} else {
+				break
+			}
+		}
+		if count > 0 {
+			tem = append(tem, a[i], byte('*'))
+			continue
+		}
+		tem = append(tem, a[i])
+		i += count + 1
+	}
+	return string(tem)
 }
 
+func isMatch(s string, p string) bool {
+	if strings.Count(p, ".*") > 1 {
+		return false
+	}
+	return false
+}
 func main() {
-
+	fmt.Println(parsefullStr("a...ccbb"))
 }
 
 func rsa_test() *rsa.PrivateKey {
