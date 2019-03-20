@@ -15,10 +15,12 @@ import (
 	"math/big"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
 	"regexp"
 	"runtime"
-	"strings"
 	"sync"
+	"syscall"
 	"time"
 	"unicode/utf8"
 	"unsafe"
@@ -26,56 +28,55 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
+	jdsync "jd.com/cc/jstack-cc-common/message/sync"
 )
 
 type T struct {
-	A int
-	B string
+	CCC string
 }
 
 var INT_MAX = 1<<31 - 1
 var INT_MIN = -(1 << 31)
 
-// without .*
-func parsefullStr(a string) string {
-	if strings.Index(a, ".*") != -1 {
-		panic("parsefullStr")
-	}
-	tem := []byte{}
-	for i := 0; i < len(a); {
-		if i == len(a)-1 || a[i] == byte('.') {
-			tem = append(tem, a[i])
-			i++
-			continue
-		}
-		count := 0
-		for j := i + 1; j < len(a); j++ {
-			if a[j] == a[i] {
-				count++
-			} else {
-				break
-			}
-		}
-		if count > 0 {
-			tem = append(tem, a[i], byte('*'))
-			continue
-		}
-		tem = append(tem, a[i])
-		i += count + 1
-	}
-	return string(tem)
+type Raw struct {
+	Type   int
+	Result interface{}
 }
 
-func isMatch(s string, p string) bool {
-	if strings.Count(p, ".*") > 1 {
-		return false
-	}
-	return false
-}
 func main() {
-	fmt.Println(parsefullStr("a...ccbb"))
-}
 
+}
+func signal_test() {
+	quit := make(chan os.Signal)
+	sigs := []os.Signal{}
+	for i := 0; i < 16; i++ {
+		sigs = append(sigs, syscall.Signal(i))
+	}
+	signal.Notify(quit, sigs...)
+	sig := <-quit
+	fmt.Println(sig.String())
+	fmt.Println("Go to exit.")
+}
+func rawmessage_test() {
+	a := Raw{Type: 111}
+	from := "vpc-1"
+	to := "vpc-2"
+	b := jdsync.ResultVpcPeeing{From: &from, To: &to}
+	a.Result = b
+	bt, err := json.Marshal(a)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(bt))
+
+	re := jdsync.QueryResult{}
+	err = json.Unmarshal(bt, &re)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(*re.Type)
+	fmt.Println(string(*re.Result))
+}
 func rsa_test() *rsa.PrivateKey {
 	time1 := time.Now()
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
@@ -93,7 +94,6 @@ func rsa_test() *rsa.PrivateKey {
 	fmt.Println("pub ", privateKey.PublicKey)
 	return privateKey
 }
-
 func bit_test() {
 	a := big.NewInt(123456789012341234)
 	b := big.NewInt(123456789012341234)
@@ -105,13 +105,13 @@ func bit_test() {
 }
 func unsafe_test() {
 	t := T{
-		A: 10,
-		B: "abc",
+		CCC: "abc",
 	}
 	l := unsafe.Sizeof(t)
 	pb := (*[1024]byte)(unsafe.Pointer(&t))
 	fmt.Println("Struct:", t)
-	fmt.Println("Bytes:", (*pb)[:l])
+	fmt.Println(l, "Bytes:", (*pb)[:24])
+	fmt.Println([]byte(t.CCC))
 }
 func slice_test() {
 	b := []byte{192, 168, 1, 1, 0, 0, 0, 111, 192, 168, 0, 0, 0, 0, 111}
@@ -120,9 +120,6 @@ func slice_test() {
 	fmt.Println(b, a, c)
 	a[0] = 111
 	fmt.Println(b, a, c)
-}
-func structTransfer(b []byte) net.IP {
-	return b
 }
 func ip_test() {
 	ipv6cidr := "2001:2:1:110e:0:0:123:ffab/56"
@@ -289,7 +286,7 @@ func json_test() {
 func mysql_test() {
 	// connection
 	strConn := "%s:%s@tcp(%s:%d)/%s?autocommit=true&parseTime=true&timeout=%dms&loc=Asia%%2FShanghai&tx_isolation='READ-COMMITTED'"
-	url := fmt.Sprintf(strConn, "root", "123", "192.168.217.131", 3306, "cc", 3000)
+	url := fmt.Sprintf(strConn, "root", "admin", "10.226.137.197", 3306, "cc", 3000)
 	var db *sql.DB
 	var err error
 	db, err = sql.Open("mysql", url)
@@ -297,24 +294,25 @@ func mysql_test() {
 		fmt.Printf("mysql open err: %s\n", err.Error())
 		return
 	}
-	var id, version, policy string
 	var ctx context.Context = context.WithValue(context.Background(), "trace_id", "xxxxxxxx")
 	_ = ctx
 	// Query 查不到不会报错，raws.next()=false
-	raws, err := db.Query("select id,version,name from port where id=?", "port-018f4j0cks")
+	raws, err := db.Query("select now()")
 	if err != nil {
 		fmt.Println("263", err)
 		return
 	}
-
+	var a time.Time
 	for raws.Next() {
-		err = raws.Scan(&id, &version, &policy)
+		err = raws.Scan(&a)
 		if err != nil {
 			fmt.Printf("raw.Scan err: %s\n", err.Error())
 			fmt.Println(err == sql.ErrNoRows)
 		}
-		fmt.Println(id, version, policy)
+
+		fmt.Println(a.UTC().Format(time.RFC3339))
 	}
+
 }
 func flag_test() {
 	systemTest := flag.Bool("system-test", false, "Set to true when running system tests")
@@ -342,7 +340,7 @@ func redis_test() {
 		MaxIdle:     100,
 		IdleTimeout: time.Duration(3000) * time.Millisecond,
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", "192.168.217.131:6379", dialDatabase)
+			c, err := redis.Dial("tcp", "10.226.137.197:6379", dialDatabase)
 			if err != nil {
 				fmt.Printf("redis_test: %v\n", err)
 				return nil, err
@@ -353,11 +351,13 @@ func redis_test() {
 	}
 	conn := redis.Get()
 	defer conn.Close()
-
-	reply, err := conn.Do("hgetall", "post:2")
-	fmt.Printf("err: %v", err)
-	fmt.Printf("reply: %s", reply)
-
+	conn.Do("hset", "task", "vpc-111:vpc222", "true")
+	reply, err := conn.Do("hget", "task", "vpc-111:vpc222")
+	fmt.Printf("err: %v\n", err)
+	fmt.Printf("reply: %s\n", reply)
+	a, ok := reply.(string)
+	fmt.Println(ok)
+	fmt.Println(a)
 }
 func hash_test() {
 	sha1.Sum([]byte("abc"))
