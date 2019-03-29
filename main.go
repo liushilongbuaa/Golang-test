@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"regexp"
 	"runtime"
 	"sync"
@@ -43,9 +44,35 @@ type Raw struct {
 	Result interface{}
 }
 
-func main() {
-
+func (s Raw) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	_, fileName := path.Split(r.URL.Path)
+	var bt []byte
+	var err error
+	switch fileName {
+	case "index.html":
+		bt, err = ioutil.ReadFile("e:\\\\sina\\新浪首页.html")
+		if err != nil {
+			fmt.Println("ioutil.ReadFile ", err.Error())
+		}
+	default:
+		bt, err = ioutil.ReadFile("e:\\\\sina\\新浪首页_files_aewina\\" + fileName)
+		if err != nil {
+			fmt.Println("ioutil.ReadFile ", err.Error())
+		}
+	}
+	w.Header().Add("Content-Type", "text/html")
+	w.Header().Add("charset", "utf-8")
+	w.Write(bt)
+	return
 }
+func main() {
+	a := Raw{}
+	err := http.ListenAndServe(":180", a)
+	if err != nil {
+		fmt.Println("ListenAndServe ", err.Error())
+	}
+}
+
 func signal_test() {
 	quit := make(chan os.Signal)
 	sigs := []os.Signal{}
