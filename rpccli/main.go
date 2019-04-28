@@ -2,39 +2,37 @@ package main
 
 import (
 	"fmt"
-	"net"
+	"net/rpc"
 	"os"
-	"strings"
-	"time"
+	"runtime"
 )
 
 func checkErr(err error) {
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		_, file, line, _ := runtime.Caller(1)
+		fmt.Println(file, line, " ", err.Error())
+		os.Exit(2)
 	}
-	fmt.Println("check success")
 }
-func main() {
-	pwd, err := os.Getwd()
-	checkErr(err)
-	i := strings.LastIndex(pwd, "/")
-	addr := pwd[:i+1] + "gsock.sock"
-	fmt.Println(addr)
-	Naddr, err := net.ResolveUnixAddr("unix", addr)
-	checkErr(err)
 
-	conn, err := net.DialUnix("unix", nil, Naddr)
-	checkErr(err)
-	defer conn.Close()
-	n, err := conn.Write([]byte("this is cli"))
-	checkErr(err)
-	fmt.Println(n)
-	bt := make([]byte, 100)
-	for i := 0; i < 10; i++ {
-		time.Sleep(time.Second)
-		_, err = conn.Read(bt)
+func main() {
+	args := os.Args[1]
+	if args == "tcp" {
+		fmt.Println("tcp")
+		client, err := rpc.Dial("tcp", "192.168.217.131:1234")
 		checkErr(err)
-		fmt.Println(string(bt))
+		defer client.Close()
+		var reply string
+		err = client.Call("Hello.Haha", args, &reply)
+		checkErr(err)
+		fmt.Println("recieve from tcp :1234    ", reply)
+	} else {
+		client1, err := rpc.Dial("unix", "/tmp/haha")
+		checkErr(err)
+		defer client1.Close()
+		var reply1 string
+		err = client1.Call("Hello.Haha", args, &reply1)
+		checkErr(err)
+		fmt.Println("recieve from unix:/tmp/haha    ", reply1)
 	}
 }

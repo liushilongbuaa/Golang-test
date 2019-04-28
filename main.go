@@ -8,6 +8,7 @@ import (
 	"crypto/rsa"
 	"crypto/sha1"
 	"database/sql"
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -17,7 +18,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path"
+	"reflect"
 	"regexp"
 	"runtime"
 	"sync"
@@ -29,50 +30,96 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
-	jdsync "jd.com/cc/jstack-cc-common/message/sync"
+	//	jdsync "jd.com/cc/jstack-cc-common/message/sync"
 )
+
+var str = "乾"
 
 type T struct {
 	CCC string
+}
+type Binary struct {
+	Type int8
 }
 
 var INT_MAX = 1<<31 - 1
 var INT_MIN = -(1 << 31)
 
-type Raw struct {
-	Type   int
-	Result interface{}
+type Raw interface {
+	String() string
 }
 
-func (s Raw) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, fileName := path.Split(r.URL.Path)
-	var bt []byte
-	var err error
-	switch fileName {
-	case "index.html":
-		bt, err = ioutil.ReadFile("e:\\\\sina\\新浪首页.html")
-		if err != nil {
-			fmt.Println("ioutil.ReadFile ", err.Error())
-		}
-	default:
-		bt, err = ioutil.ReadFile("e:\\\\sina\\新浪首页_files_aewina\\" + fileName)
-		if err != nil {
-			fmt.Println("ioutil.ReadFile ", err.Error())
-		}
-	}
-	w.Header().Add("Content-Type", "text/html")
-	w.Header().Add("charset", "utf-8")
-	w.Write(bt)
-	return
-}
 func main() {
-	a := Raw{}
-	err := http.ListenAndServe(":180", a)
+	t := Binary{0x61}
+	err := binary.Write(os.Stdout, binary.BigEndian, t)
 	if err != nil {
-		fmt.Println("ListenAndServe ", err.Error())
+		fmt.Println(err.Error())
+	}
+	return
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, "a", 1)
+	ctx = context.WithValue(ctx, "a", 2)
+	ctx = context.WithValue(ctx, "a", 3)
+	ctx = context.WithValue(ctx, "a", 4)
+	fmt.Println(ctx)
+}
+func swi(s string) Raw {
+	return reflect.ValueOf(s)
+}
+func fn(n, l, r int) int {
+	if n == 1 {
+		return 1
+	}
+	if n == l {
+		return 1
+	}
+	if r == 1 {
+		return fn(n-1, l-1, r-1)
+	}
+	if l <= r {
+		return fn(n, l+1, r)
+	}
+	return fn(n, l+1, r) + fn(n, l, r+1)
+}
+func printQ(a string, ret *[]string, l, r int) {
+	if l < 0 || r < 0 {
+		return
+	}
+	if l == r && l == 0 {
+		*ret = append(*ret, a)
+		return
+	}
+	if l >= r {
+		printQ(a+"(", ret, l-1, r)
+	} else {
+		printQ(a+"(", ret, l-1, r)
+		printQ(a+")", ret, l, r-1)
 	}
 }
+func tcp_test() {
+	ln, err := net.Listen("tcp", ":888")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer ln.Close()
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
 
+		bt := make([]byte, 1024)
+		n, err := conn.Read(bt)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		bt = bt[:n]
+		fmt.Println(string(bt))
+	}
+}
 func signal_test() {
 	quit := make(chan os.Signal)
 	sigs := []os.Signal{}
@@ -85,24 +132,24 @@ func signal_test() {
 	fmt.Println("Go to exit.")
 }
 func rawmessage_test() {
-	a := Raw{Type: 111}
-	from := "vpc-1"
-	to := "vpc-2"
-	b := jdsync.ResultVpcPeeing{From: &from, To: &to}
-	a.Result = b
-	bt, err := json.Marshal(a)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(string(bt))
+	//	a := Raw{Type: 111}
+	//	from := "vpc-1"
+	//	to := "vpc-2"
+	//	b := jdsync.ResultVpcPeeing{From: &from, To: &to}
+	//	a.Result = b
+	//	bt, err := json.Marshal(a)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	fmt.Println(string(bt))
 
-	re := jdsync.QueryResult{}
-	err = json.Unmarshal(bt, &re)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(*re.Type)
-	fmt.Println(string(*re.Result))
+	//	re := jdsync.QueryResult{}
+	//	err = json.Unmarshal(bt, &re)
+	//	if err != nil {
+	//		panic(err)
+	//	}
+	//	fmt.Println(*re.Type)
+	//	fmt.Println(string(*re.Result))
 }
 func rsa_test() *rsa.PrivateKey {
 	time1 := time.Now()
@@ -709,15 +756,15 @@ A:
 	}
 	fmt.Println()
 }
-func http_test() {
+func httpclient_test() {
 	input := []byte{}
-	req, err := http.NewRequest("POST", "http://127.0.0.1:80/cc-server", bytes.NewReader(input))
+	req, err := http.NewRequest("POST", "http://10.226.137.196:9698/cc-server", bytes.NewReader(input))
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "CcClient")
 
-	client := http.Client{}
-	client.Do(req)
-	fmt.Println(req, err)
+	client := http.Client{Timeout: 100000 * time.Microsecond}
+	resp, err := client.Do(req)
+	fmt.Println(resp, err)
 }
 func http_server_test() {
 	a := &handler{}
