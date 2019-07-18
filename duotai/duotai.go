@@ -4,27 +4,37 @@ import (
 	"fmt"
 )
 
+var SceneList []A
+
+func init() {
+	SceneList = []A{&Ping{}, &Acl{}}
+}
+
 type A interface {
-	Method() int
-	Method1() int
+	Say()
+	Id() string
 }
 
-type DefaultA struct{}
-
-func (b *DefaultA) Method() int {
-	fmt.Println("this is DefaultA.Method.")
-	return 0
-}
-func (b *DefaultA) Method1() int {
-	fmt.Println("this is DefaultA.Method1.")
-	return 0
+type Ping struct {
+	Config  string
+	Context string
 }
 
-type B struct {
-	A
+func (p *Ping) Id() string {
+	return "Ping"
+}
+func (p *Ping) Say() {
+	fmt.Printf("this is %s: %v\n", p.Id(), *p)
 }
 
-//func (b *B) Method() int {
-//	fmt.Println("this is B.Method.")
-//	return 1
-//}
+type Acl struct {
+	Config  string
+	Context string
+}
+
+func (p *Acl) Id() string {
+	return "Acl"
+}
+func (p *Acl) Say() {
+	fmt.Printf("this is %s: %v\n", p.Id(), *p)
+}

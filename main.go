@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Golang-test/duotai"
 	"Golang-test/subdir"
 	"bytes"
 	"context"
@@ -8,7 +9,6 @@ import (
 	"crypto/rsa"
 	"crypto/sha1"
 	"database/sql"
-	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -30,16 +30,19 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
+
 	//	jdsync "jd.com/cc/jstack-cc-common/message/sync"
 )
 
-var str = "乾"
+var Str = "乾"
 
 type T struct {
-	CCC string
+	CCC []string `json:"-"`
+	Ping
 }
-type Binary struct {
-	Type int8
+type Ping struct {
+	SrcIps []string
+	DstIps []string
 }
 
 var INT_MAX = 1<<31 - 1
@@ -50,18 +53,22 @@ type Raw interface {
 }
 
 func main() {
-	t := Binary{0x61}
-	err := binary.Write(os.Stdout, binary.BigEndian, t)
-	if err != nil {
-		fmt.Println(err.Error())
+	fmt.Println(Str)
+}
+func duotai_test() {
+	bt, _ := ioutil.ReadFile("a.json")
+	amap := map[string]interface{}{}
+	json.Unmarshal(bt, &amap)
+	for _, v := range duotai.SceneList {
+		if mod, ok := amap[v.Id()]; ok {
+			bt, _ = json.Marshal(mod)
+			json.Unmarshal(bt, v)
+		}
+		v.Say()
 	}
+	bt, _ = json.Marshal(duotai.SceneList)
+	fmt.Println(string(bt))
 	return
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "a", 1)
-	ctx = context.WithValue(ctx, "a", 2)
-	ctx = context.WithValue(ctx, "a", 3)
-	ctx = context.WithValue(ctx, "a", 4)
-	fmt.Println(ctx)
 }
 func swi(s string) Raw {
 	return reflect.ValueOf(s)
@@ -179,13 +186,13 @@ func bit_test() {
 }
 func unsafe_test() {
 	t := T{
-		CCC: "abc",
+	///	CCC: "abc",
 	}
 	l := unsafe.Sizeof(t)
 	pb := (*[1024]byte)(unsafe.Pointer(&t))
 	fmt.Println("Struct:", t)
 	fmt.Println(l, "Bytes:", (*pb)[:24])
-	fmt.Println([]byte(t.CCC))
+	///	fmt.Println([]byte(t.CCC))
 }
 func slice_test() {
 	b := []byte{192, 168, 1, 1, 0, 0, 0, 111, 192, 168, 0, 0, 0, 0, 111}
@@ -768,7 +775,7 @@ func httpclient_test() {
 }
 func http_server_test() {
 	a := &handler{}
-	http.ListenAndServe(":81", a)
+	http.ListenAndServe(":80", a)
 	fmt.Println("finished")
 }
 func deferreturn_test() (int, error) {
@@ -781,6 +788,4 @@ type handler struct{}
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello world!!!\n"))
-	action := r.FormValue("Action")
-	fmt.Println("Action: ", action)
 }
