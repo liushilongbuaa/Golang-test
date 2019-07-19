@@ -30,6 +30,7 @@ sed -i s/"nv"/"女"/g $fanren
 sed -i s/"yù"/"玉"/g $fanren
 sed -i s/"shì"/"侍"/g $fanren
 sed -i s/"lù"/"露"/g $fanren
+sed -i s/"1ù"/"露"/g $fanren
 sed -i s/"chūn"/"春"/g $fanren
 sed -i s/"huā"/"花"/g $fanren
 sed -i s/"ròu"/"肉"/g $fanren
@@ -128,8 +129,31 @@ sed -i -r s/"丹y"/"丹药"/g $fanren
 sed -i -r s/"灵y"/"灵药"/g $fanren
 sed -i -r s/"y园"/"药园"/g $fanren
 sed -i -r s/"zá"/"砸"/g $fanren
-
-
+sed -i -r s/"1日"/"旧"/g $fanren
+sed -i -r "s/铸血塑灵\*\*/铸血塑灵大法/g" $fanren 
+处理 1 数字1
+sed -i -r "s/【.*】//g" $fanren 
+sed -i -r "s/【未完待续//g" $fanren 
+sed -i -r "s/【//g" $fanren 
+sed -i -r "s/】//g" $fanren 
+sed -i -r "s/RO@。//g" $fanren 
+sed -i -r "s/@。//g" $fanren 
+sed -i -r "s/全文字无广告//g" $fanren 
+sed -i -r "s/正文 //g" $fanren 
+sed -i -r "s/第..?卷 //g" $fanren 
+grep -E "第十卷魔" $fanren -n | awk -F: '{print$1}' | sort -nr
+grep 仙传第六 $fanren -n | awk -F: '{print$1}' | sort -nr
+sed -i -r "s/第三卷-//g" $fanren 
+sed -i -r "s/=小说首发==//g" $fanren 
+sed -i -r "s/=首发=//g" $fanren 
+sed -i -r "s/\^\^首发\^\^//g" $fanren 
+sed -i -r "s/=首发=//g" $fanren 
+sed -i -r "s/发首发//g" $fanren 
+sed -i -r "s/小小小说网首发手打//g" $fanren 
+sed -i -r "s/更新冠军贴吧传奇首发//g" $fanren 
+sed -i -r "s/首发冠军贴吧传奇更新//g" $fanren 
+sed -i -r "s/老\[首发/老者/g" $fanren 
+sed -i -r "s/\n\n\n/\n\n/g" $fanren 
 
 sed -i s/"五行"/"五行(xing2)"/g $fanren
 
