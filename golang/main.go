@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Golang-test/duotai"
-	"Golang-test/subdir"
+	"LslStudy/golang/duotai"
+	"Lslstudy/golang/subdir"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -53,7 +53,7 @@ type Raw interface {
 }
 
 func main() {
-	fmt.Println(Str)
+	pi_test()
 }
 func duotai_test() {
 	bt, _ := ioutil.ReadFile("a.json")
@@ -460,227 +460,7 @@ func gcache_test() {
 		time.Sleep(time.Millisecond * time.Duration(300))
 	}
 }
-func logic_test() {
-	count := func(b int, c [10]int) int {
-		var sum int
-		for i := 0; i < 10; i++ {
-			if c[i] == b {
-				sum += 1
-			}
-		}
-		return sum
-	}
-	var a [10]int
-	var i int
-	for i = 0; i < 1024*1024; i++ {
-		tem := i
-		for j := 0; j < 10; j++ {
-			a[j] = tem % 4
-			tem = tem / 4
-		}
-		switch a[1] {
-		case 0:
-			if a[4] != 2 {
-				continue
-			}
-		case 1:
-			if a[4] != 3 {
-				continue
-			}
-		case 2:
-			if a[4] != 0 {
-				continue
-			}
-		case 3:
-			if a[4] != 1 {
-				continue
-			}
-		}
-		switch a[2] {
-		case 0:
-			if (a[5] == a[1] && a[1] == a[3] && a[5] != a[2]) != true {
-				continue
-			}
-		case 1:
-			if (a[2] == a[1] && a[1] == a[3] && a[2] != a[5]) != true {
-				continue
-			}
-		case 2:
-			if (a[2] == a[5] && a[5] == a[3] && a[2] != a[1]) != true {
-				continue
-			}
-		case 3:
-			if (a[2] == a[5] && a[5] == a[1] && a[2] != a[3]) != true {
-				continue
-			}
-		}
-		switch a[3] {
-		case 0:
-			if a[0] != a[4] {
-				continue
-			}
-		case 1:
-			if a[1] != a[6] {
-				continue
-			}
-		case 2:
-			if a[0] != a[8] {
-				continue
-			}
-		case 3:
-			if a[5] != a[9] {
-				continue
-			}
-		}
-		switch a[4] {
-		case 0:
-			if a[4] != a[7] {
-				continue
-			}
-		case 1:
-			if a[4] != a[3] {
-				continue
-			}
-		case 2:
-			if a[4] != a[8] {
-				continue
-			}
-		case 3:
-			if a[4] != a[6] {
-				continue
-			}
-		}
-		switch a[5] {
-		case 0:
-			if (a[7] == a[1] && a[1] == a[3]) == false {
-				continue
-			}
-		case 1:
-			if (a[7] == a[0] && a[0] == a[5]) == false {
-				continue
-			}
-		case 2:
-			if (a[7] == a[2] && a[2] == a[9]) == false {
-				continue
-			}
-		case 3:
-			if (a[7] == a[4] && a[4] == a[8]) == false {
-				continue
-			}
-		}
-		C0 := count(0, a)
-		C1 := count(1, a)
-		C2 := count(2, a)
-		C3 := count(3, a)
-		fmt.Println(C0+C1+C2+C3, i)
-		switch a[6] {
-		case 0:
-			if C2 > C1 || C2 > C3 || C2 > C0 {
-				continue
-			}
-		case 1:
-			if C1 > C0 || C1 > C2 || C1 > C3 {
-				continue
-			}
-		case 2:
-			if C0 > C1 || C0 > C2 || C0 > C3 {
-				continue
-			}
-		case 3:
-			if C3 > C1 || C3 > C2 || C3 > C0 {
-				continue
-			}
-		}
-		switch a[7] {
-		case 0:
-			if a[6] == a[0]-1 || a[6] == a[0]+1 {
-				continue
-			}
-		case 1:
-			if a[4] == a[0]-1 || a[4] == a[0]+1 {
-				continue
-			}
-		case 2:
-			if a[1] == a[0]-1 || a[1] == a[0]+1 {
-				continue
-			}
-		case 3:
-			if a[9] == a[0]-1 || a[9] == a[0]+1 {
-				continue
-			}
-		}
-		switch a[8] {
-		case 0:
-			if (a[0] == a[5]) == (a[4] == a[5]) {
-				continue
-			}
-		case 1:
-			if (a[0] == a[5]) == (a[4] == a[9]) {
-				continue
-			}
-		case 2:
-			if (a[0] == a[5]) == (a[4] == a[1]) {
-				continue
-			}
-		case 3:
-			if (a[0] == a[5]) == (a[4] == a[8]) {
-				continue
-			}
-		}
-		min := C0
-		max := C0
-		if min > C1 {
-			min = C1
-		}
-		if min > C2 {
-			min = C2
-		}
-		if min > C3 {
-			min = C3
-		}
-		if max < C1 {
-			max = C1
-		}
-		if max < C2 {
-			max = C2
-		}
-		if max < C3 {
-			max = C3
-		}
-		switch a[9] {
-		case 0:
-			if max-min != 3 {
-				continue
-			}
-		case 1:
-			if max-min != 2 {
-				continue
-			}
-		case 2:
-			if max-min != 4 {
-				continue
-			}
-		case 3:
-			if max-min != 1 {
-				continue
-			}
-		}
-		for i := 0; i < 10; i++ {
-			switch a[i] {
-			case 0:
-				fmt.Print("A")
-			case 1:
-				fmt.Print("B")
-			case 2:
-				fmt.Print("C")
-			case 3:
-				fmt.Print("D")
-			}
-		}
-		fmt.Println(" ")
-		break
-	}
-}
+
 func pi_test() {
 	const ARRSIZE = 10010
 	const DISPCNT = 10000
