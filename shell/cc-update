@@ -1,0 +1,104 @@
+#! bash
+help_usage(){
+    echo ""
+    echo "input param error:"
+    echo ""
+	echo "-i: file for ansible"
+	echo "-a: which part to use in repo"
+	echo "-m: install module: cc_server, lb_server, cc_controller_vs"
+	
+	echo ""
+	echo "example:  sh $0 -i gz_hosts -a api -m cc_server"
+	exit 1
+}
+{
+	while getopts "i:a:m:k:x:e:h" arg
+	do
+		case $arg in
+			i)
+				FILE=$OPTARG
+				;;
+			a)
+				HOSTS=$OPTARG
+				;;
+			m)
+				MODULE=$OPTARG
+				;;
+			k)
+				IGNOREKEY=$OPTARG
+				;;
+			x)
+				DIP=$OPTARG
+				;;
+			e)
+				NS=$OPTARG
+				;;
+			h)
+				help_usage
+				;;
+			?)
+				echo "unkonw input argument"
+				help_usage
+				exit 1
+		;;
+		esac
+	done
+}
+
+install(){
+	if [ $# -lt  1 ];then
+		echo "install need package param."
+        exit 1
+    fi
+	
+	yum downgrade $1 -y && yum install $1 -y
+	yum list lb-server --showduplicates
+}
+
+checkruntime(){
+	echo "------------------------------- check $MODULE runtime file -------------------------------"
+	ansible $HOSTS -i $FILE -m shell -a "$MODULE -v| tail -n 2 | head -n 1" | awk '{if (NR % 3)printf$0;else print$0}' | awk -F"version:" '{print$2,$1}' | sort
+}
+
+checkbinary(){
+	echo "------------------------------- check $MODULE binary file -------------------------------"
+	ansible $HOSTS -i $FILE -m shell -a "$MODULE -v| tail -n 5 | head -n 1" | awk '{if (NR % 3)printf$0;else print$0}' | awk -F"version:" '{print$2,$1}' | sort
+}
+
+# $1 is keyword line to ignore
+# cc_controller_vs     DatapathType     Underlay   需按自身情况
+#
+#
+#
+#
+checkconf(){
+	echo "------------------------------- check $MODULE config file -------------------------------"
+	if [[ $MODULE == cc_server ]]
+	then
+		confpath=/etc/cc_server/serviceconfig.json
+	elif [[ $MODULE == lb_server ]]
+	then
+		confpath=/etc/lb/serviceconfig.json
+	elif [[ $MODULE == cc_controller_vs ]]
+	then
+		confpath=/etc/cc_controller_vs/cc_controller_vs.json
+	fi
+	
+	if [[ $1 != "" ]]
+	then
+		grepv="grep -v $1 $confpath | "
+	fi
+
+	ansible $HOSTS -i $FILE -m shell -a "$grepv md5sum" -f 50 | awk '{if (NR % 3)printf$0;else print$0}' | awk -F">>" '{print $2,$1}' | sort 
+}
+
+main(){
+	checkconf $IGNOREKEY
+	exit 0
+	if [[ $# < 1 ]]
+		then 
+		help
+		exit 0
+	fi
+}
+main $@

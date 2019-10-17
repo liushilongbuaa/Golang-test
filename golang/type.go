@@ -11,6 +11,6 @@ type B struct {
 }
 
 type C struct {
-	P1 *string `josn:"p1"`
-	P2 *string `josn:"p2"`
+	P1 string `josn:"p1"`
+	P2 string `josn:"p2"`
 }

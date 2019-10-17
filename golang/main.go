@@ -2,6 +2,7 @@ package main
 
 import (
 	"LslStudy/golang/duotai"
+	"Lslstudy/golang/pachong"
 	"Lslstudy/golang/subdir"
 	"bytes"
 	"context"
@@ -30,7 +31,6 @@ import (
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
 	_ "github.com/go-sql-driver/mysql"
-
 	//	jdsync "jd.com/cc/jstack-cc-common/message/sync"
 )
 
@@ -53,7 +53,26 @@ type Raw interface {
 }
 
 func main() {
-	pi_test()
+	pachong.Run()
+}
+
+func time_test() {
+	timmer := time.NewTimer(time.Second * time.Duration(10))
+	for i := 0; i < 1; i++ {
+		fmt.Println(time.Now())
+		time.Sleep(time.Second)
+	}
+	for {
+		select {
+		case <-timmer.C:
+			fmt.Println("timmer")
+		default:
+			fmt.Println("default")
+			time.Sleep(time.Second)
+		}
+	}
+
+	fmt.Println("finish")
 }
 func duotai_test() {
 	bt, _ := ioutil.ReadFile("a.json")
@@ -354,7 +373,7 @@ func regexp_test() {
 func json_test() {
 	jsonrow := `
 	{
-		"p1":""
+		"p1":"abc"
 	}
 	`
 	a := C{}
@@ -363,6 +382,10 @@ func json_test() {
 		fmt.Println(err)
 	}
 	fmt.Println(a.P1, a.P2)
+	bt, err := json.MarshalIndent(a, "", "    ")
+
+	fmt.Println(err)
+	fmt.Println(string(bt))
 }
 func mysql_test() {
 	// connection
@@ -378,7 +401,8 @@ func mysql_test() {
 	var ctx context.Context = context.WithValue(context.Background(), "trace_id", "xxxxxxxx")
 	_ = ctx
 	// Query 查不到不会报错，raws.next()=false
-	raws, err := db.Query("select now()")
+	sqlstr := "select now()"
+	raws, err := db.Query(sqlstr)
 	if err != nil {
 		fmt.Println("263", err)
 		return
@@ -391,9 +415,8 @@ func mysql_test() {
 			fmt.Println(err == sql.ErrNoRows)
 		}
 
-		fmt.Println(a.UTC().Format(time.RFC3339))
 	}
-
+	fmt.Println(a.Second())
 }
 func flag_test() {
 	systemTest := flag.Bool("system-test", false, "Set to true when running system tests")
@@ -402,12 +425,9 @@ func flag_test() {
 
 	fmt.Printf("input params: %v\n", flag.Args())
 }
-func map_test() {
-	A := map[string]interface{}{}
-	A["a"] = 123
-	A["b"] = "abc"
-	if A["a"] != nil {
-		fmt.Printf("map_test: not nil\n")
+func map_test(A map[int]int) {
+	for i := 2; i < 10; i++ {
+		A[i] = i
 	}
 }
 func redis_test() {
@@ -554,9 +574,10 @@ func httpclient_test() {
 	fmt.Println(resp, err)
 }
 func http_server_test() {
-	a := &handler{}
-	http.ListenAndServe(":80", a)
-	fmt.Println("finished")
+	handler := &handler{}
+	http.Handle("/", handler)
+	err := http.ListenAndServe(":801", nil)
+	fmt.Println("finished", err)
 }
 func deferreturn_test() (int, error) {
 	fmt.Println("1")
@@ -567,5 +588,6 @@ func deferreturn_test() (int, error) {
 type handler struct{}
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("hello world!!!\n"))
+	w.Write([]byte("hello"))
+	time.Sleep(time.Duration(5) * time.Second)
 }

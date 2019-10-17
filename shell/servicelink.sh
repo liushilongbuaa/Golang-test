@@ -49,15 +49,11 @@ check_external(){
 }
 
 main(){
-    check_cc_common
-    check_cc_server
-    check_lb_common
-    check_lb_server
-    check_external
+    check_cc_common && check_cc_server && check_lb_common && check_lb_server && check_external
 }
 
-#main
-#exit
+main
+exit
 
 for i in $(seq 1 5 )
 do
