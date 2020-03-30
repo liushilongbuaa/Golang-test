@@ -2,9 +2,9 @@ package main
 
 import (
 	"LslStudy/golang/duotai"
-	"Lslstudy/golang/pachong"
 	"Lslstudy/golang/subdir"
 	"bytes"
+	"container/list"
 	"context"
 	"crypto/rand"
 	"crypto/rsa"
@@ -18,10 +18,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"reflect"
 	"regexp"
 	"runtime"
+	"strconv"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -41,7 +44,7 @@ type T struct {
 	Ping
 }
 type Ping struct {
-	SrcIps []string
+	SrcIps *[]string
 	DstIps []string
 }
 
@@ -53,7 +56,39 @@ type Raw interface {
 }
 
 func main() {
-	pachong.Run()
+	fmt.Println(fmt.Sprintf("%s haha", strconv.Itoa()))
+}
+func exec_test() {
+	f, err := os.OpenFile("./abc.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 666)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	cmd := exec.Command("echo", time.Now().Format(time.RFC3339), "[ac] [awe] [eawf]")
+	cmd.Stdout = f
+	cmd.Stderr = f
+	err = cmd.Run()
+	fmt.Println(err)
+}
+func mem_test() {
+	const Len int = 100000
+	a := [Len]*string{}
+	for i := 0; i < Len; i++ {
+		tem := "long long long a string " + strconv.Itoa(i)
+		a[i] = &tem
+	}
+	fmt.Println("mem allocated success.")
+	for i := 0; i < 20; i++ {
+		fmt.Println(i)
+		time.Sleep(time.Second * time.Duration(1))
+	}
+	for i := 0; i < Len; i++ {
+		a[i] = nil
+		fmt.Println("release ", i)
+		time.Sleep(time.Microsecond * time.Duration(100))
+	}
+	runtime.GC()
+	select {}
 }
 
 func time_test() {
@@ -401,12 +436,13 @@ func mysql_test() {
 	var ctx context.Context = context.WithValue(context.Background(), "trace_id", "xxxxxxxx")
 	_ = ctx
 	// Query 查不到不会报错，raws.next()=false
-	sqlstr := "select now()"
-	raws, err := db.Query(sqlstr)
+	sqlstr := "select updated_at from bgw where updated_at > ?;"
+	raws, err := db.Query(sqlstr, time.Now().Truncate(time.Second*time.Duration(21100)))
 	if err != nil {
-		fmt.Println("263", err)
+		fmt.Println("418", err)
 		return
 	}
+	fmt.Println(time.Now(), "#############", time.Now().Add(time.Second*time.Duration(-60)))
 	var a time.Time
 	for raws.Next() {
 		err = raws.Scan(&a)
@@ -414,9 +450,9 @@ func mysql_test() {
 			fmt.Printf("raw.Scan err: %s\n", err.Error())
 			fmt.Println(err == sql.ErrNoRows)
 		}
-
+		fmt.Println(a)
 	}
-	fmt.Println(a.Second())
+
 }
 func flag_test() {
 	systemTest := flag.Bool("system-test", false, "Set to true when running system tests")
@@ -425,7 +461,12 @@ func flag_test() {
 
 	fmt.Printf("input params: %v\n", flag.Args())
 }
-func map_test(A map[int]int) {
+func map_test() {
+	a := map[int]int{}
+	map_test_1(a)
+	fmt.Println(a)
+}
+func map_test_1(A map[int]int) {
 	for i := 2; i < 10; i++ {
 		A[i] = i
 	}
@@ -480,7 +521,24 @@ func gcache_test() {
 		time.Sleep(time.Millisecond * time.Duration(300))
 	}
 }
+func list_test() {
+	l := list.New()
+	l.PushBack(time.Now())
+	l.PushBack(time.Now().Add(time.Second))
+	tem := time.Now().Add(time.Duration(500) * time.Millisecond)
 
+	for i := l.Front(); i != nil; i = i.Next() {
+		if i_, ok := i.Value.(time.Time); ok {
+			if i_.After(tem) {
+				l.InsertBefore(tem, i)
+				break
+			}
+		}
+	}
+	for i := l.Front(); i != nil; i = i.Next() {
+		fmt.Println(i.Value)
+	}
+}
 func pi_test() {
 	const ARRSIZE = 10010
 	const DISPCNT = 10000
@@ -589,5 +647,4 @@ type handler struct{}
 
 func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("hello"))
-	time.Sleep(time.Duration(5) * time.Second)
 }

@@ -12,16 +12,16 @@ import (
 )
 
 func main() {
-	path := "jinyiyexing.txt"
-	baseurl := "https://www.biquge.cm"
-	url := baseurl + "/3/3957/2295247.html"
+	path := "fanren.txt"
+	baseurl := "http://www.biquwo.org"
+	url := baseurl + "/bqw7933/5190239.html"
 	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 777)
 	if err != nil {
 		fmt.Println("OpenFile: ", err)
 		return
 	}
 
-	for i := 0; i < 10000; i++ {
+	for i := 0; i < 100000; i++ {
 		if !strings.Contains(url, "html") {
 			break
 		}
@@ -29,6 +29,7 @@ func main() {
 		cli := &http.Client{Timeout: time.Duration(10) * time.Second}
 		resp := &http.Response{}
 		var doc *goquery.Document
+		charset := false
 		for {
 			resp, err = cli.Get(url)
 			if err != nil {
@@ -40,6 +41,7 @@ func main() {
 				fmt.Println("NewDocumentFromR.eader: ", err)
 				continue
 			}
+			charset = strings.Contains(resp.Header.Get("Content-Type"), "charset=gbk")
 			defer resp.Body.Close()
 			break
 		}
@@ -47,7 +49,7 @@ func main() {
 
 		boxCon := doc.Find(".box_con")
 		var decode func(string) string
-		if true {
+		if charset {
 			decode = func(a string) string {
 				return mahonia.NewDecoder("gbk").ConvertString(a)
 			}
@@ -58,7 +60,8 @@ func main() {
 		}
 		// get title
 		title := decode(boxCon.Find(".bookname").Find("h1").Text()) + "\n\n"
-		xiayizhang := "a:contains(" + mahonia.NewEncoder("gbk").ConvertString("下一章") + ")"
+		//	xiayizhang := "a:contains(" + mahonia.NewEncoder("bgk").ConvertString("下一章") + ")"
+		xiayizhang := "a:contains(下一章)"
 		url = baseurl + boxCon.Find(".bottem1").Find(xiayizhang).Nodes[0].Attr[0].Val
 
 		body := decode(boxCon.Find("#content").Text()) + "\n\n"

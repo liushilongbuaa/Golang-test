@@ -6,10 +6,10 @@ then
 	lbcomm=ipv6_test_servicelink_build
 	lbser=ipv6_tomerge_servicelink_build
 else
-    cccomm=service_linkV3
-    ccser=service_linkV3
-    lbcomm=service_linkV3
-    lbser=service_linkV3
+    cccomm=service_linkV3_test
+    ccser=service_link_test
+    lbcomm=service_linkV3_test
+    lbser=service_linkV3_test
 fi
 
 check_cc_common(){
