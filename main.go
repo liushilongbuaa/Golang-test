@@ -16,13 +16,12 @@ import (
 	"net/http"
 	"regexp"
 	"runtime"
-	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
 	"unsafe"
 
-	"./subdir"
+	"Golang-test/subdir"
 
 	"github.com/bluele/gcache"
 	"github.com/garyburd/redigo/redis"
@@ -37,53 +36,31 @@ type T struct {
 var INT_MAX = 1<<31 - 1
 var INT_MIN = -(1 << 31)
 
-// compress a-z with *
-// ex: aabbc -> a*b*c
-func parsefullStr(a string) string {
-	if strings.Index(a, ".*") != -1 {
-		panic("parsefullStr")
-	}
-	tem := []byte{}
-	for i := 0; i < len(a); {
-		if i == len(a)-1 {
-			tem = append(tem, a[i])
-			break
-		}
-		count := 0
-		for j := i + 1; j < len(a); j++ {
-			if a[j] == a[i] {
-				count++
-			} else {
-				break
-			}
-		}
-		if count > 0 {
-			tem = append(tem, a[i], byte('*'))
-		} else {
-			tem = append(tem, a[i])
-		}
-		i += count + 1
-	}
-	return string(tem)
-}
-
-func isMatch(s string, p string) bool {
-	parsedS := parsefullStr(s)
-	if parsedS == p {
-		return true
-	}
-	return false
-}
 func main() {
-	fmt.Println(isMatch("awejafweifoaweifjawffasdf", "awejafweifoaweifjawf*asdf"))
-	fmt.Println(isMatch("aa", "aa*"))
-	/*	fmt.Println(isMatch("a"))
-		fmt.Println(isMatch("aab"))
-		fmt.Println(isMatch("abbaa"))
-		fmt.Println(isMatch("accffffv"))
-		fmt.Println(isMatch("aaaaaav"))*/
+	a := make(map[string]int)
+	fmt.Println(a == nil, len(a))
 }
+func download_test() {
+	bt := make([]byte, 0, 1000000)
+	if res, err := http.Get("https://www.92kshu.com/74596/1.html"); err != nil {
+		fmt.Println(err)
+	} else {
+		if n, err := res.Body.Read(bt); err != nil {
+			fmt.Println(err)
+		} else {
+			fmt.Println(n)
+			bt = bt[:n]
+		}
+	}
+	fmt.Println(string(bt))
+}
+func tcp_mms_test() {
+	conn, err := net.DialTCP()
+	if err != nil {
+		fmt.Println(err)
+	}
 
+}
 func rsa_test() *rsa.PrivateKey {
 	time1 := time.Now()
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
